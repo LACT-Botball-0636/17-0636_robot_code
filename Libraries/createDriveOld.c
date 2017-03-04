@@ -21,7 +21,7 @@ void create_wait_time(int time)//time is in deciseconds
 	create_power_led(250,254);
 	atexit(create_disconnect);
 }*/
-void create_wait_dist(int dist)//dist is in mm
+	
 {
 	create_write_byte(156);
 	create_write_int(dist);
