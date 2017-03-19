@@ -11,7 +11,6 @@
 #define ORANGE 2
 #define BLUE 3
 
-
 void dump_poms();
 void sort_green();
 void sort_pink();
