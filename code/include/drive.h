@@ -25,7 +25,7 @@
 #define MOT_LEFT 0 // Port the left drive motor is plugged into.
 #define MOT_RIGHT 1 // Port the right drive motor is plugged into.
 #define WHEEL_DIAMETER 5.5 // Diameter of the wheel. Common values in appendix
-#define ROBOT_DIAMETER 16 // Distance from the center of one wheel to the center of the other.
+#define ROBOT_DIAMETER 13 // Distance from the center of one wheel to the center of the other.
 #define BEMFS_PER_ROTATION 1500 // Motor ticks per rotation. KIPR says this value should be around 1500.
 
 // Tuning Constants
