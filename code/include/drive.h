@@ -31,8 +31,8 @@
 // Tuning Constants
 #define SPD_L_F 1400 // Left forward speed. Max is 1500.
 #define SPD_R_F 1400 // Right forward speed. Max is 1500.
-#define SPD_L_B -900 // Left backward speed. Max is 1500.
-#define SPD_R_B -900 // Right backward speed. Max is 1500.
+#define SPD_L_B 900 // Left backward speed. Max is 1500.
+#define SPD_R_B 900 // Right backward speed. Max is 1500.
 
 // Gyro Constants
 #define Kp 1 // Proportionality constant for Gyro driving
