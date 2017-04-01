@@ -3,8 +3,60 @@
 #include "vector.h"
 #include "main.h"
 #include "sort.h"
+#include <thread.h>
 
+#define SWITCH_PORT ?
+#define SPINNER_PORT ?
 
+#define SWITCH_RIGHT ?
+#define SWITCH_LEFT ?
+#define SWITCH_DUMP ?
+
+#define SORT_TIME ?
+
+int isbreak;
+
+void timer()
+{
+    printf("Timer started.\n");
+    msleep(SORT_TIME);
+    isbreak = 1;
+}
+
+void sort_main(int time)
+{
+    isbreak = 0;
+    //time milliseconds
+    thread timer_thread = thread_create(timer);
+    thread_start(timer_thread);
+    
+    int count;
+    
+    motor(SPINNER_PORT, 300);
+    while (1)
+    {
+        if (isbreak)
+        {
+            off(SPINNER_PORT);
+            thread_destroy(timer_thread);
+            break;
+        }
+        int color = find_color();
+        if (color != -1)
+        {
+            if (think(color)) 
+            {
+                //continue using motor
+            }
+            else
+            {
+                off(SPINNER_PORT);
+                break;
+            }
+            msleep(500);
+        }
+    }
+}
 
 // ========================== //
 //     Find current color     //
@@ -47,6 +99,7 @@ int find_color()
             }
         }
     }
+    
     return current_index;
 }
 
@@ -54,74 +107,51 @@ int find_color()
 // Decides whether or not to discard //
 // ================================= //
 int think(int color){
-	//will be used to tell whether or not poms should be discarded after color detect
-	//return 0 if discard the pom else return 1. basically used to balance # of poms 
-	//to get maximum sorting points
-	
-	int nonzerocount;
-	
-	//vector for storing value info
-	vector vect;
-	vector valvect;
-	vector_init(&vect);
-	vector_init(&valvect);
-	
-	int count_array[4] = {green_count, pink_count, orange_count, blue_count};
-	
-	//rewrite so one list is a list of channel indices that arent 0 and the other is the list corresponding to it
-	
-	//sets up vectors
-	int i;
-	for (i = 0; i < CHANNEL_COUNT; i++)
-	{
-		vector_add(&vect, NULL);
-		vector_add(&valvect, NULL);
-		if (!count_array[i] && color != i)
-		{ 
-			nonzerocount += 1;
-			vector_set(&vect,i,i);
-			vector_set(&valvect,i,count_array[i]);
-		}
-	}
-	
-	//super inefficient. can be improved later
-	if (nonzerocount == 0)
-	{
-		return 1; 
-	} //if there arent any poms, no reason to discard
-	else 
-	{
-		if (nonzerocount == 1)
-		{
-			if (count_array[color] == (int) vector_get(&valvect, 0))
-			{
-				return 0;
-			}
-		}
-		else if (nonzerocount == 2)
-		{
-			if ((int) vector_get(&valvect, 0) == (int) vector_get(&valvect, 1))
-			{
-				if (count_array[color] == (int) vector_get(&valvect, 0))
-				{
-					return 0;
-				} 
-			}
-		}
-		else if (nonzerocount == 3)
-		{
-			if ((int) vector_get(&valvect, 0) == (int) vector_get(&valvect, 1) && (int) vector_get(&valvect, 0) == (int) vector_get(&valvect, 2))
-			{
-				if (count_array[color] == (int) vector_get(&valvect, 0))
-				{
-					return 0;
-				}
-			}
-		}
-		
-	}
-	//if nothing is wrong
-	return 1;
+    //int greencount = 0;
+    //int orangecount = 0;
+    //int pinkcount = 0;
+    //int bluecount = 0;
+    int colorlist[4] = {greencount, orangecount, pinkcount, bluecount};
+    
+    //assuming first pom is green
+    if ((colorlist[color] >= colorlist[GREEN] && color != GREEN) || ()
+    {
+        //has reached equillibrium among poms
+        //stop sorting
+        return 0;
+    }
+    else
+    {
+    
+        switch(color)
+        {
+            case GREEN:
+                greencount++;
+                break;
+            case PINK:
+                pinkcount++;
+                break;
+            case ORANGE:
+                orangecount++;
+                break;
+            case BLUE:
+                bluecount++;
+                break;
+        }
+    
+        if (colorlist[color] % 2 == 0) 
+        {
+        //even amount of poms
+            set_servo_position(SWITCH_PORT, SWITCH_RIGHT);
+        } 
+        else
+        {
+        //odd amount of poms
+            set_servo_position(SWITCH_PORT, SWITCH_LEFT);
+        }
+    }
+    return 1;
+    
 }
 
 // ========================== //
@@ -133,31 +163,31 @@ void sort_colors(){
     
     stopSort = 0;
     while (!stopSort)
-	{
-    	//detect color, return color. (-1=none,0=green,1=pink,2=orange,3=blue)
-    	int result = find_color();
+    {
+        //detect color, return color. (-1=none,0=green,1=pink,2=orange,3=blue)
+        int result = find_color();
         if (result != -1)
-		{
+        {
             switch (result)
-			{
+            {
                 case GREEN:
                     //set_servo_position(FURROW_SERVO_PORT,FURROW_NEAR_POS);
-					printf("green detected. not discard? %d", think(GREEN));
+                    printf("green detected. not discard? %d", think(GREEN));
                     green_count += 1;
                     break;
                 case PINK:
                     //set_servo_position(FURROW_SERVO_PORT,FURROW_MIDDLE_POS);
-					printf("pink detected. not discard? %d", think(PINK));
+                    printf("pink detected. not discard? %d", think(PINK));
                     pink_count += 1;
                     break;
                 case ORANGE:
                     //set_servo_position(FURROW_SERVO_PORT,FURROW_FAR_POS);
-					printf("orange detected. not discard? %d", think(ORANGE));
+                    printf("orange detected. not discard? %d", think(ORANGE));
                     orange_count += 1;
                     break;
                 case BLUE:
                     //set_servo_position(FURROW_SERVO_PORT,FURROW_NEAR_POS);
-					printf("blue detected. not discard? %d", think(BLUE));
+                    printf("blue detected. not discard? %d", think(BLUE));
                     blue_count += 1;
                     break;
             }
@@ -165,8 +195,8 @@ void sort_colors(){
             msleep(1300);
         }
         else
-		{
-			printf("no pom found");
+        {
+            printf("no pom found");
             //maybe will "go to sleep" and update less often if it detects that it has neither 
             //seen the collection arm move nor has it seen a pom a certain number of times
             //in a row whilst in regular update mode. if the arm moves or it DOES see a pom on  
