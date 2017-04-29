@@ -91,7 +91,10 @@ void sort_orange_green() {
             //unjam_thread = thread_create(unjam);
             //thread_start(unjam_thread);
             if(count%2 == 0)
-                arm_shake();
+	    {
+	    	//arm_shake(); COMMENTED OUT SO IT DOESN"T INTERFERE WITH ARM
+	    }
+                
             count++;
             /*
             if(count == 4) {
@@ -168,7 +171,9 @@ void sort(int color) {
             //thread unjam_thread = thread_create(unjam);
             //thread_start(unjam_thread);
             if(count%2 == 0)
-                arm_shake();
+	    {
+                //arm_shake(); COMMENTED OUT SO DOESN"T INTERFERE WITH ARM
+	    }
             count++;
         }
     }
