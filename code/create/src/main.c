@@ -304,25 +304,35 @@ int main()
         //sort orange while having them fall down into the furrows while shaking
         thread create_shake_turn_thread = thread_create(create_shake_turn_forever);
         thread_start(create_shake_turn_thread);
-	    set_servo_position(GATE,GATE_LEFT);
+	set_servo_position(GATE,GATE_LEFT);
         create_stop();
         msleep(2000);
         dump_dregs();
+	
+	//when done sorting first 4 poms, stop shaking
         thread_wait(sort_orange_thread);
         thread_destroy(sort_orange_thread);
         printf("destroy orange thread\n");
         thread_destroy(create_shake_turn_thread);
+	create_stop();
         printf("stop turn thread\n");
         msleep(300);
+	    
+	//square up against furrows and align with 2nd set of furrows
         create_drive_direct(-150,-150);
         msleep(600);
         create_forward(5, 150);
+	    
+	//start shaking thread
+	thread create_shake_turn_thread = thread_create(create_shake_turn_forever);
         thread_start(create_shake_turn_thread);
-        thread_start(sort_orange_thread);
-        thread_wait(sort_orange_thread);   
+	
+	//sort the last 3 orange poms
+	sort_orange_green(); 
         thread_destroy(create_shake_turn_thread);
         printf("stop turn thread second time\n");
         
+	    
         create_forward(10,150);
         create_left(90,150);
         set_servo_position(SHOULDER_PORT,SHOULDER_FLATTEN);
