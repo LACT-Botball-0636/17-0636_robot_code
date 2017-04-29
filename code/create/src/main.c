@@ -96,15 +96,7 @@ void create_shake_turn_forever()
 
 int main()
 {
-    /*
-    printf("start\n");
-    camera_open_black();
-    sort_main();
-    printf("sorting finished.\n");
-    camera_close();
-    return 0;
-    */
-	int old_time = time(NULL);
+    int old_time = time(NULL);
     create_connect();
 
     //initialise servo positions
@@ -116,12 +108,7 @@ int main()
     light_start();
     set_servo_position(SHOULDER_PORT, SHOULDER_DUMP);
     //msleep(300);
-    //motor(SPINNER_PORT, SPINNER_SPEED);
-    //msleep(10000);
-    //unjam();
     
-
-
     //for testing SORTING
     /*
     camera_open_black();
@@ -198,6 +185,7 @@ int main()
     create_backward(15,450);
     thread dump_bin_thread = thread_create(dump_bin);
     thread_start(dump_bin_thread);
+	
 	//start sorting
     camera_open_black();
     thread sort_green_thread = thread_create(sort_green);
@@ -205,17 +193,13 @@ int main()
     
     create_forward(20, 100);
 
-	//thread_wait(dump_bin_thread);
-    //thread_destroy(dump_bin_thread);
-    
-
     //backup on the wall again
     create_left(90, 150);
     create_backward(70,450);
     create_drive_direct(-200, -200);
     msleep(3000);
 
-    //drop bin under orange poms and spin arm on orange pom device
+    //go forward, turn, and square up against starting wall. 
     create_forward(19, 150);
     create_left(100, 150);
     thread dump_dregs_thread = thread_create(dump_dregs);
@@ -229,10 +213,13 @@ int main()
     msleep(200);
     dump_dregs();
     msleep(250);
+	
+	//bring arm down and move bin under orange poms
     set_servo_position(SHOULDER_PORT, SHOULDER_PICK_UP);
     msleep(250);
     create_forward(40, 150);
     
+	//drop bin and align arm with device
     set_servo_position(WRIST_PORT, WRIST_OPEN);
     msleep(1000);
     set_servo_position(SHOULDER_PORT, SHOULDER_DUMP);
@@ -244,7 +231,8 @@ int main()
     motor(3, -100);
     msleep(3200);
     off(3);
-
+	
+	//turn back and pick up bin
     create_right(39, 150);
     msleep(500);
     create_backward(9, 150);
@@ -253,8 +241,10 @@ int main()
     msleep(500);
     set_servo_position(SHOULDER_PORT, SHOULDER_TEMP);
     msleep(300);
+	
     if(STATE==1)
     {
+		//square up with left wall
         create_forward(5,150);
         create_right(90,150);
         create_drive_direct(-150,-150);
@@ -332,7 +322,7 @@ int main()
         thread_destroy(create_shake_turn_thread);
         printf("stop turn thread second time\n");
         
-	    
+	    //flatten poms in furrows
         create_forward(10,150);
         create_left(90,150);
         set_servo_position(SHOULDER_PORT,SHOULDER_FLATTEN);
