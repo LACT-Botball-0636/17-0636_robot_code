@@ -1,59 +1,338 @@
 #include <kipr/botball.h>
-
-#include "vector.h"
 #include "main.h"
 #include "sort.h"
-#include <thread.h>
 
-#define SWITCH_PORT ?
-#define SPINNER_PORT ?
+void multicamupdate(int count) {
+    int i;
+    for(i = 0; i < count; i++)
+        camera_update();
+}
 
-#define SWITCH_RIGHT ?
-#define SWITCH_LEFT ?
-#define SWITCH_DUMP ?
+void sort_green() {
+    sort(GREEN);
+}
 
-#define SORT_TIME ?
+void sort_orange() {
+    sort(ORANGE);
+}
 
+int area(int channel) {
+    int i,count;
+    int size = 0;
+    count = get_object_count(channel);
+    for(i = 0; i < count ; i++)
+        size += get_object_area(channel,i);
+    return size;
+}
+
+void spin_back_check() {
+    if(gmpc(SPINNER_PORT) > 350) {
+        cmpc(SPINNER_PORT);
+        motor(SPINNER_PORT, -SPINNER_SPEED);
+        msleep(250);
+        motor(SPINNER_PORT, SPINNER_SPEED);
+    }
+}
+
+void unjam() {
+    while(1) {
+        cmpc(SPINNER_PORT);
+        msleep(250);
+        //printf("SPINNER_CHANGE: %d\n", gmpc(SPINNER_PORT));
+        if(gmpc(SPINNER_PORT)<10) {
+            motor(SPINNER_PORT, -SPINNER_SPEED);
+            msleep(750);
+            motor(SPINNER_PORT, SPINNER_SPEED);
+        }
+    }
+}
+
+void create_shake_turn() {
+    	create_left(5,150);
+    	create_right(5,150);
+}
+
+void sort_orange_green() {
+    int count = 0;
+    thread unjam_thread = thread_create(unjam);
+    
+    thread_start(unjam_thread);
+    multicamupdate(20);
+    set_servo_position(GATE,GATE_CLOSE);
+    set_servo_position(BIG,BIG_MIDDLE);
+    msleep(400);
+    motor(SPINNER_PORT,SPINNER_SPEED);
+    
+    
+    while(count < 4) {
+        multicamupdate(4);
+        if(area(ORANGE)>CAMERA_TOLERANCE) {
+            printf("seen orange\n");
+            set_servo_position(BIG,BIG_RIGHT);
+            msleep(SPINNER_DELAY);
+            off(SPINNER_PORT);
+            //thread_destroy(unjam_thread);
+            //if (count == 7)
+            //    thread_destroy(unjam_thread);
+            msleep(300);
+            /*if(count>=4) {
+                set_servo_position(BIG,BIG_LEFT_LESS);
+                msleep(450);
+            }
+            else
+            {*/
+                servo_slow(BIG,BIG_LEFT_LESS,450);
+            //}
+            set_servo_position(BIG, BIG_MIDDLE);
+            msleep(300);
+            multicamupdate(8);
+            msleep(300);
+            motor(SPINNER_PORT,SPINNER_SPEED);
+            //unjam_thread = thread_create(unjam);
+            //thread_start(unjam_thread);
+            if(count%2 == 0)
+                arm_shake();
+            count++;
+            /*
+            if(count == 4) {
+                thread_destroy(create_shake_turn_thread);
+                ao();
+                create_left(10,150);
+                set_servo_position(GATE,GATE_LEFT);
+                msleep(500);
+                create_right(15,150);
+                int i;
+                for(i = 0; i < 3; i++) {
+                    //thread create_shake_turn_thread = thread_create(create_shake_turn);
+                    //thread_start(create_shake_turn_thread);
+                }
+                create_left(5,150);
+                create_forward(5, 150);
+                motor(SPINNER_PORT,SPINNER_SPEED);
+                thread_start(create_shake_turn_thread);
+            }*/
+        }
+        camera_update();
+        if(area(GREEN) > CAMERA_TOLERANCE) {
+            printf("seen green\n");
+            set_servo_position(BIG,BIG_LEFT_LESS);
+            msleep(SPINNER_DELAY);
+            off(SPINNER_PORT);
+            //thread_destroy(unjam_thread);
+            msleep(300);
+            set_servo_position(BIG,BIG_RIGHT);
+            msleep(450);
+            set_servo_position(BIG, BIG_MIDDLE);
+            msleep(300);
+            multicamupdate(8);
+            msleep(300);
+            motor(SPINNER_PORT,SPINNER_SPEED);
+            //unjam_thread = thread_create(unjam);
+            //thread_start(unjam_thread);
+        }
+    }
+    off(SPINNER_PORT);
+    thread_destroy(unjam_thread);
+}
+
+void sort(int color) {
+    printf("sorting %d poms\n", color);
+    int count = 0;
+    thread unjam_thread = thread_create(unjam);
+    
+   	thread_start(unjam_thread);
+    multicamupdate(20);
+    set_servo_position(GATE,GATE_CLOSE);
+    set_servo_position(BIG,BIG_MIDDLE);
+    msleep(400);
+    printf("SPINN THE SPINNER\n");
+    motor(SPINNER_PORT,SPINNER_SPEED);
+    
+    while(count < 4) {
+        multicamupdate(4);
+        //spin_back_check();
+        if(area(color)>CAMERA_TOLERANCE) {
+            set_servo_position(BIG,BIG_RIGHT);
+            msleep(SPINNER_DELAY);
+            off(SPINNER_PORT);
+            //thread_destroy(unjam_thread);
+            msleep(300);
+            set_servo_position(BIG,BIG_LEFT_LESS);
+            msleep(450);
+            set_servo_position(BIG, BIG_MIDDLE);
+            msleep(300);
+            multicamupdate(8);
+            msleep(300);
+            printf("START SPINNER\n");
+            motor(SPINNER_PORT,SPINNER_SPEED);
+            //thread unjam_thread = thread_create(unjam);
+            //thread_start(unjam_thread);
+            if(count%2 == 0)
+                arm_shake();
+            count++;
+        }
+    }
+    off(SPINNER_PORT);
+    if(color == ORANGE) {
+        dump_left();
+        create_shake(1, 50, 500, 0);
+        msleep(1000);
+    }
+    set_servo_position(BIG,BIG_MIDDLE);
+    msleep(400);
+    motor(SPINNER_PORT,SPINNER_SPEED);
+    while(count < 8) {
+        multicamupdate(4);
+        //spin_back_check();
+        if(area(color)>CAMERA_TOLERANCE) {
+            set_servo_position(BIG,BIG_LEFT_LESS);
+            msleep(SPINNER_DELAY);
+            off(SPINNER_PORT);
+            //thread_destroy(unjam_thread);
+            msleep(300);
+            set_servo_position(BIG,BIG_RIGHT);
+            msleep(450);
+            set_servo_position(BIG, BIG_MIDDLE);
+            msleep(300);
+            multicamupdate(8);
+            msleep(300);
+            printf("START SPINNER\n");
+            motor(SPINNER_PORT,SPINNER_SPEED);
+            if (count != 7) {
+                //thread unjam_thread = thread_create(unjam);
+                //thread_start(unjam_thread);
+            }
+            count++;
+        }
+        cmpc(SPINNER_PORT);
+    }
+    off(SPINNER_PORT);
+    thread_destroy(unjam_thread);
+}
+
+void dump_green() {
+    //dumps extra green poms
+    int time,count = 0;
+    
+    printf("DUMPING GREEN POMS!!!!\n");
+    set_servo_position(GATE, GATE_UP);
+    set_servo_position(BIG, BIG_LEFT_LESS);
+    multicamupdate(20);
+    motor(SPINNER_PORT, SPINNER_SPEED);
+
+
+    while(time < DUMP_GREEN_TIME && count < 3)
+    {
+        camera_update();
+
+        if(area(GREEN)>500)
+        {
+            set_servo_position(BIG, BIG_RIGHT);
+            msleep(250);
+            set_servo_position(BIG, BIG_LEFT_LESS);
+            msleep(250);
+            time = 0;
+            msleep(2000);
+            count++;
+        }
+        time++;
+        printf("time: %d\n", time);
+    }
+    off(SPINNER_PORT);
+}
+
+void dump_left() {
+    set_servo_position(GATE, GATE_LEFT);
+    msleep(1000);
+    set_servo_position(BIG, BIG_LEFT);
+    msleep(500);
+    set_servo_position(BIG, BIG_MIDDLE);
+    printf("DUMP LEFT\n");
+}
+
+void dump_right() {
+    servo_slow(GATE, GATE_RIGHT_SEMI,750);
+    msleep(500);
+    set_servo_position(GATE, GATE_RIGHT);
+    msleep(500);
+    set_servo_position(BIG, BIG_RIGHT);
+    msleep(500);
+    set_servo_position(BIG, BIG_MIDDLE);
+    printf("DUMP RIGHT\n");
+    
+}
+
+/*
 int isbreak;
+int green_count	= 0;
+int orange_count = 0;
+int pink_count = 0;
+int blue_count = 0;
+
+void shake_arm(int amount)
+{	
+    int x = get_servo_position(BIG);
+	set_servo_position(BIG, x+amount);
+    msleep(200);
+    set_servo_position(BIG, x-amount);
+    msleep(200);
+    set_servo_position(BIG, x);
+    msleep(200);
+    printf("shook %d\n", amount);
+}
 
 void timer()
 {
     printf("Timer started.\n");
     msleep(SORT_TIME);
     isbreak = 1;
+    printf("timer done! \n");
 }
 
-void sort_main(int time)
+void sort_main()
 {
     isbreak = 0;
     //time milliseconds
     thread timer_thread = thread_create(timer);
     thread_start(timer_thread);
-    
-    int count;
-    
-    motor(SPINNER_PORT, 300);
+
+    int color;
+
+    motor(SPINNER_PORT, 150);
+
     while (1)
     {
+        printf("in while loop....\n");
         if (isbreak)
         {
             off(SPINNER_PORT);
             thread_destroy(timer_thread);
+            printf("breaking out of while loop\n");
             break;
         }
-        int color = find_color();
+        color = find_color();
+        printf("Color: %d\n",color);
         if (color != -1)
         {
+            printf("found a color\n");
+            //found a color
             if (think(color)) 
             {
                 //continue using motor
+                printf("think() told robot to keep using motor\n");
+                msleep(500);
             }
             else
             {
+                printf("think() told robot to stop sorting\n");
                 off(SPINNER_PORT);
                 break;
             }
-            msleep(500);
+
+        }
+        else
+        {
+        	printf("did not find a color...\n");
         }
     }
 }
@@ -99,22 +378,24 @@ int find_color()
             }
         }
     }
-    
+
     return current_index;
 }
 
-// ================================= //
-// Decides whether or not to discard //
-// ================================= //
+// ====================================	//
+// Decides what to do with the pom	 	//
+// Return value of 1 continues sorting 	//
+// 0 stops sorting 						//
+// ================================= 	//
 int think(int color){
     //int greencount = 0;
     //int orangecount = 0;
     //int pinkcount = 0;
     //int bluecount = 0;
-    int colorlist[4] = {greencount, orangecount, pinkcount, bluecount};
-    
+    int colorlist[4] = {green_count, orange_count, pink_count, blue_count};
+
     //assuming first pom is green
-    if ((colorlist[color] >= colorlist[GREEN] && color != GREEN) || ()
+    if (colorlist[color] >= colorlist[GREEN] && color != GREEN) 
     {
         //has reached equillibrium among poms
         //stop sorting
@@ -122,45 +403,58 @@ int think(int color){
     }
     else
     {
-    
+
         switch(color)
         {
             case GREEN:
-                greencount++;
+                green_count++;
+                printf("detected GREEN pom\n");
                 break;
             case PINK:
-                pinkcount++;
+                pink_count++;
+                printf("detected GREEN pom\n");
                 break;
             case ORANGE:
-                orangecount++;
+                orange_count++;
+                printf("detected GREEN pom\n");
                 break;
             case BLUE:
-                bluecount++;
+                blue_count++;
+                printf("detected GREEN pom\n");
                 break;
         }
-    
+
         if (colorlist[color] % 2 == 0) 
         {
         //even amount of poms
+            off(SPINNER_PORT);
             set_servo_position(SWITCH_PORT, SWITCH_RIGHT);
+            msleep(500);
+            motor(SPINNER_PORT, 150);
+
         } 
         else
         {
         //odd amount of poms
-            set_servo_position(SWITCH_PORT, SWITCH_LEFT);
+            off(SPINNER_PORT);
+            set_servo_position(SWITCH_PORT, SWITCH_RIGHT);
+            msleep(500);
+            motor(SPINNER_PORT, 150);
         }
     }
     return 1;
-    
+
 }
 
 // ========================== //
 //      Sorts the colors      //
 // ========================== //
+
+//(unused)
 void sort_colors(){
     //reset counts of poms
     blue_count = 0; green_count = 0; orange_count = 0; pink_count = 0;
-    
+
     stopSort = 0;
     while (!stopSort)
     {
@@ -191,7 +485,7 @@ void sort_colors(){
                     blue_count += 1;
                     break;
             }
-            
+
             msleep(1300);
         }
         else
@@ -205,3 +499,4 @@ void sort_colors(){
         }
     } 
 }
+*/
