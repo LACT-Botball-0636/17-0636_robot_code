@@ -128,6 +128,12 @@ void arm_up_for_dist(int dist) // Dist is in Back-EMF's
     ao();
 }
 
+void arm_up_botguy() 
+{
+    msleep(200);
+	arm_up_for_dist(200);
+}
+
 //Initialization. Do not modify without good reason!
 void initialize()
 {
@@ -174,7 +180,7 @@ void cow_dump()
     cow_dump_wrist();
     msleep(750);
     cow_dump_claw();
-    set_servo_position(WRIST, WRIST_BOTGUY);
+    set_servo_position(WRIST, WRIST_DOWN);
     msleep(750);
     arm_up();
 }
@@ -203,7 +209,7 @@ int main()
     create_backward(5, 300);
     create_right(150, 300);
     create_backward(25,300);
-    create_forward(45,300);
+    create_forward(51,300);
     create_right(90,300);
     create_backward(20, 300);
 
@@ -215,7 +221,7 @@ int main()
     }
     create_backward(5, 200);
     msleep(500);
-    create_right(90,150);
+    create_right(90,100);
     create_backward(50,300);
     create_forward(35,300);
 
@@ -230,14 +236,21 @@ int main()
     arm_down_for_time(500);
     claw_close(500);*/
     arm_down_for_dist(5200); //5200
+    set_servo_position(CLAW, CLAW_MID);
     set_servo_position(WRIST, WRIST_DOWN);
-    create_backward(16,300); //16
+    
+   	thread arm_up_botguy_thread = thread_create(arm_up_botguy);
+    thread_start(arm_up_botguy_thread);
+    create_backward(18,100); //16, 300
+    thread_wait(arm_up_botguy_thread);
+    thread_destroy(arm_up_botguy_thread);
+    
     arm_down_for_time(500);
     claw_close(500);
     arm_up_for_time(1750);
     create_forward(13,300);
     arm_up();
-    set_servo_position(WRIST, WRIST_BOTGUY);
+    set_servo_position(WRIST, WRIST_DOWN);
     create_backward(10,300);
     msleep(200);
 
@@ -259,10 +272,11 @@ int main()
 
     //moving away from the ramp and starting route to pick up the first blue cow
     msleep(250);
-    create_forward(26,300);
+    create_forward(30,150);
     msleep(250);
-    create_right(125,300);
-    set_servo_position(WRIST, WRIST_UP);
+    create_left(95, 100);
+    
+    /*set_servo_position(WRIST, WRIST_UP);
     arm_down_for_time(1000);
     create_backward(30,300);
     msleep(250);
@@ -274,20 +288,25 @@ int main()
     create_forward(29,300);
     msleep(500);
     create_right(99,100);
-    msleep(500);
-
-
+    msleep(500);*/
+    
     //positioning arm for blue cow
-    create_backward(40-botguy_offset,200);
+    create_backward(5, 200);
     while (analog(SEE_COW) < 2900){
-        create_backward(1,45);
+        create_backward(1, 45);
     }
-    create_forward(33,200);
+    create_right(45, 100);
+    while (analog(SEE_COW) < 2900){
+        create_left(1, 45);
+    }
+    create_left(8, 100);
+    msleep(300);
+    create_forward(31,200);
     msleep(500);
-    create_right(2,50);
-    arm_down_for_dist(1600);
+    //create_right(2,50);
+    arm_down_for_dist(1900);
     set_servo_position(WRIST, WRIST_DOWN);
-    arm_down_for_dist(3000);
+    arm_down_for_dist(4500);
     msleep(500);
 
     //grab blue cow and bring to ramp
@@ -297,7 +316,7 @@ int main()
     set_servo_position(WRIST, WRIST_DOWN);
     arm_up();
     msleep(250);
-    create_backward(37,300); //move along platform to place the cow to the left of botguy
+    create_backward(41,300); //move along platform to place the cow to the left of botguy
     create_right(90,100);
     create_backward(25,200);
     msleep(500);
@@ -321,7 +340,7 @@ int main()
     msleep(200);
 
     //go towards 2nd cow
-    create_forward(63, 400);
+    create_forward(66, 400);
     msleep(200);
     create_left(90, 300);
     msleep(200);
@@ -343,13 +362,35 @@ int main()
     create_forward(20, 300);
     msleep(200);
     create_left(200,200);
-    create_backward(35, 300);
+    create_backward(20, 300);
     msleep(200);
-    create_forward(4,100);
-    msleep(500);
+    //create_forward(4,100);
+    //msleep(500);
 
     cow_dump_second();
 
+    //head towards water tank
+    create_forward(10, 300);
+    create_right(135, 300);
+    create_backward(38, 300);
+    //create_right(45, 300);
+    create_backward(15, 300);
+    
+    // Shake Water tank
+    create_forward(35, 300);
+    set_servo_position(WRIST, WRIST_UP);
+    set_servo_position(CLAW, CLAW_OPEN-600);
+    arm_down_for_time(1000);
+    set_servo_position(WRIST, 200);
+    arm_down();
+    create_backward(24, 300); //19
+    msleep(300);
+    arm_up_for_dist(3000);
+    create_forward(15, 200);
+    arm_up_for_dist(2500);
+    create_backward(14, 200);
+    arm_up_for_dist(1000);
+    
     disable_servos();
     return 0;
 }
