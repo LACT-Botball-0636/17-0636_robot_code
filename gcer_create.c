@@ -6,25 +6,30 @@
 #define LEFT 0
 //Servo Ports
 #define WRIST 3
-#define CLAW 1 
+#define CLAW 0 
 //Sensor Ports
 #define TOUCH_DOWN 1
 #define TOUCH_UP 0
-#define TOUCH_RIDGE 2
+#define TOUCH_RIDGE_RIGHT 2
+#define TOUCH_RIDGE_LEFT 9
 #define SEE_COW 0
 //Motor Constants
 #define MAX_SPEED 1500
 #define ARM_SPEED 100
 //Claw Positions
 #define CLAW_OPEN 2047
-#define CLAW_CLOSE 0
+#define CLAW_CLOSE 400
 #define CLAW_COW 1600
-#define CLAW_MID 1024
+#define CLAW_MID 2000
 //Wrist Positions
 #define WRIST_UP 1300
 #define WRIST_DOWN 335
 #define WRIST_BOTGUY 475
+//Camera Variables
+#define CHANNEL 0
 //Other Variables
+#define TOWARDS 0
+#define AWAY 1
 int botguy_offset;
 
 void servo_slow(int servo, int end, int time) //time is in MS
@@ -138,23 +143,23 @@ void arm_up_botguy()
 void initialize()
 {
     create_connect();
-/*
+    printf("A Button: Botguy is facing away from us\n");
+    printf("C Button: Botguy is facing towards from us\n");
     while(!a_button() && !b_button() && !c_button()) 
     {
         if (a_button())
         {
-            botguy_offset = -3;
+            botguy_offset = AWAY;
         }
         else if (b_button())
         {
-            botguy_offset = 0;
+            //botguy_offset = 0;
         }
         else if (c_button())
         {
-            botguy_offset = 3;
+            botguy_offset = TOWARDS;
         }
     }
-    */
 
     //enable_servos();
     cmpc(LEFT);
@@ -168,7 +173,7 @@ void cow_dump_wrist()
 
 void cow_dump_claw()
 {
-    servo_slow(CLAW, CLAW_OPEN-1000, 2400);
+    //servo_slow(CLAW, CLAW_OPEN-1000, 2400);
     set_servo_position(CLAW, CLAW_OPEN);
     msleep(200);
 }
@@ -176,68 +181,154 @@ void cow_dump_claw()
 void cow_dump()
 {
     arm_down_for_time(700);
-    msleep(200);
     cow_dump_wrist();
-    msleep(750);
+    msleep(200);
+    create_backward(1, 400);
+    msleep(200);
     cow_dump_claw();
     set_servo_position(WRIST, WRIST_DOWN);
     msleep(750);
-    arm_up();
+    //arm_up();
 }
 
 void cow_dump_second()
 {
     arm_down_for_time(700);
-    msleep(200);
     cow_dump_wrist();
-    msleep(750);
+    msleep(200);
+    create_backward(1, 400);
+    msleep(200);
     cow_dump_claw();
     set_servo_position(WRIST, WRIST_BOTGUY-200);
     msleep(750);
     arm_up();
 }
 
+int get_biggest_object()
+{
+    int object;
+    int area;
+    int greatest_area = 0;
+    int biggest_object = 0;
+	for (object = 0; object < get_object_count(CHANNEL); object++)
+    {
+    	area = get_object_area(CHANNEL, object);
+        if (area > greatest_area)
+        {
+        	greatest_area = area;
+            biggest_object = object;
+        }
+    }
+    return biggest_object;
+}
+
+void straighten_ridge()
+{
+	// Straightens up on the ridge in the middle of the field
+    while(!digital(TOUCH_RIDGE_LEFT))
+    {
+    	create_drive_direct(100, 100);
+        msleep(1);
+    }
+    int x = 0;
+    while(!digital(TOUCH_RIDGE_RIGHT) && (x < 200))
+    {
+    	create_drive_direct(0, 100);
+        msleep(1);
+        x++;
+    }
+    if(x > 998)
+    {
+        create_drive_direct(0,-100);
+        msleep(1000);
+    }
+}
+
 int main()
 {
     initialize();
+    //light_start();
+    shut_down_in(119);
     set_servo_position(WRIST, WRIST_UP);
+    create_right(20, 50);
     arm_up();
+    create_left(20, 50);
     enable_servos();
 
     //getting out of starting box
-    claw_open(500);
+    claw_open(100);
     create_backward(5, 300);
     create_right(150, 300);
     create_backward(25,300);
-    create_forward(51,300);
+    create_forward(44,300); //51
     create_right(90,300);
     create_backward(20, 300);
 
     //moving down middle of field towards botguy
-    create_forward(118+botguy_offset, 300); //121
-    while(!digital(TOUCH_RIDGE))
+    create_forward(50, 300); //114
+    create_left(1, 300);
+    create_forward(64, 300);
+    straighten_ridge();
+    
+    // Move until botguy is in the center of camera's view
+    /*
+    camera_open_black();
+    camera_update();
+    point2 center = get_object_center(CHANNEL, get_biggest_object());
+    while (center.x < (70) || center.x > (90)) 
+    // While the center of botguy is not within 10 units of center of camera view
     {
-    	create_forward(1, 50);
+        center = get_object_center(CHANNEL, get_biggest_object()); //Get the center of the biggest 
+        camera_update();
+        if (center.x < (70))
+        {
+        	create_backward(1, 100);
+        } 
+        else if (center.x > (90))
+        {
+        	create_forward(1, 100);
+        }
+        
     }
-    create_backward(5, 200);
-    msleep(500);
-    create_right(90,100);
-    create_backward(50,300);
+    camera_close();
+    */
+    //create_backward(5, 300);
+    create_forward(2, 100);
+    create_right(93,100); 
+    msleep(100);
+    create_backward(60,300);
     create_forward(35,300);
-
-    //positioning arm for botguy and grabbing him
-    /*arm_down_for_time(3000);
-    set_servo_position(WRIST, WRIST_DOWN);
-    set_servo_position(CLAW, CLAW_OPEN);
-    msleep(300);
-    arm_down();
-    arm_up_for_time(850);
-    create_backward(16,300);
-    arm_down_for_time(500);
-    claw_close(500);*/
-    arm_down_for_dist(5200); //5200
+    
+    
+    if (botguy_offset == TOWARDS) 
+    {
+    //knock botguy over
+    create_right(5, 300);
+    arm_down_for_dist(5650);
     set_servo_position(CLAW, CLAW_MID);
     set_servo_position(WRIST, WRIST_DOWN);
+    create_backward(22, 100);
+	create_left(20, 50);
+    arm_up_for_dist(800);
+    //create_right(2-botguy_offset,50);
+    create_left(5, 50);
+    msleep(100);
+    //arm_up_for_dist(500);
+    arm_down_for_dist(2700);
+    set_servo_position(CLAW, CLAW_CLOSE);
+    msleep(500);
+   	arm_up_for_dist(3600);
+    create_right(75, 200);
+    arm_up();
+    create_right(30, 200);
+    }
+    else if (botguy_offset == AWAY)
+    {
+    //positioning arm for botguy and grabbing him
+    
+    arm_down_for_dist(4800); //5200
+    set_servo_position(CLAW, CLAW_MID);
+    set_servo_position(WRIST, WRIST_DOWN+200);
     
    	thread arm_up_botguy_thread = thread_create(arm_up_botguy);
     thread_start(arm_up_botguy_thread);
@@ -245,151 +336,165 @@ int main()
     thread_wait(arm_up_botguy_thread);
     thread_destroy(arm_up_botguy_thread);
     
-    arm_down_for_time(500);
-    claw_close(500);
+    arm_down_for_time(750);
+    msleep(150);
+    claw_close(200);
     arm_up_for_time(1750);
     create_forward(13,300);
     arm_up();
     set_servo_position(WRIST, WRIST_DOWN);
     create_backward(10,300);
-    msleep(200);
+    
 
     //dumping botguy on the ramp
     create_right(90,200);
-    msleep(200);
+    msleep(100);
+    }
     create_backward(42,300);
-    msleep(200);
+    msleep(100);
     create_right(90,200);
-    msleep(200);
-    create_backward(38,300);
-    msleep(500);
-    set_servo_position(WRIST, WRIST_UP);
-    //arm_down_for_time(800);
-    msleep(1000);
+    msleep(100);
+    create_backward(44,300); //47 //38
+    msleep(100);
+    create_forward(5, 300);
+    arm_down_for_dist(800);
+    set_servo_position(WRIST, WRIST_UP-300);
+    msleep(300);
     set_servo_position(CLAW, CLAW_OPEN);
-    msleep(1000);
-    set_servo_position(WRIST, 1000);
+    msleep(300);
+    set_servo_position(WRIST, WRIST_DOWN);
 
     //moving away from the ramp and starting route to pick up the first blue cow
-    msleep(250);
-    create_forward(30,150);
-    msleep(250);
-    create_left(95, 100);
-    
-    /*set_servo_position(WRIST, WRIST_UP);
-    arm_down_for_time(1000);
-    create_backward(30,300);
-    msleep(250);
-    create_right(27,300);
-    msleep(250);
-    //square up
-    create_backward(30,300);
-    msleep(250);
-    create_forward(29,300);
-    msleep(500);
-    create_right(99,100);
-    msleep(500);*/
+    msleep(200);
+    create_forward(1,150);
+    create_right(25,200);
+    create_forward(19,150);
+    create_left(70, 100);
+    while (analog(SEE_COW) < 1300)
+    {
+    	create_left(1, 100);
+    }
     
     //positioning arm for blue cow
-    create_backward(5, 200);
     while (analog(SEE_COW) < 2900){
-        create_backward(1, 45);
+        create_backward(1, 100);
     }
     create_right(45, 100);
     while (analog(SEE_COW) < 2900){
-        create_left(1, 45);
+        create_left(1, 100);
     }
     create_left(8, 100);
-    msleep(300);
+    msleep(100);
     create_forward(31,200);
-    msleep(500);
-    //create_right(2,50);
-    arm_down_for_dist(1900);
+    create_right(1,25);
+    set_servo_position(WRIST, WRIST_UP);
+    arm_down_for_dist(2200);
     set_servo_position(WRIST, WRIST_DOWN);
-    arm_down_for_dist(4500);
+    arm_down_for_dist(2700); //4500
     msleep(500);
 
     //grab blue cow and bring to ramp
     set_servo_position(CLAW, CLAW_CLOSE);
-    msleep(700);
+    msleep(200);
     arm_up_for_time(1000);
-    set_servo_position(WRIST, WRIST_DOWN);
+    set_servo_position(WRIST, WRIST_DOWN-200);
     arm_up();
-    msleep(250);
+    create_left(1, 25);
     create_backward(41,300); //move along platform to place the cow to the left of botguy
     create_right(90,100);
+    msleep(100);
     create_backward(25,200);
-    msleep(500);
-    create_forward(10,100);
-    msleep(500);
+    msleep(100);
+    create_forward(5,100);
+    msleep(100);
 
-    //msleep(500);
-    //create_backward(6,350);
-    //msleep(500);
+    cow_dump_second();
 
-    cow_dump();
-
-    create_forward(20,200);
-    msleep(500);
+    create_forward(35,200);
 
     //turn and square up against far wall
     set_servo_position(WRIST, WRIST_UP);
     create_left(90, 300);
-    msleep(200);
-    create_backward(50, 400);
-    msleep(200);
+    msleep(100);
+    create_backward(45, 400);
 
     //go towards 2nd cow
-    create_forward(66, 400);
-    msleep(200);
+    create_forward(67, 400);
     create_left(90, 300);
     msleep(200);
-    create_backward(40, 300);
+    create_backward(25, 100);
+    //turn a little to the right
+    create_stop();
+    create_drive_direct(-100, 0);
+    msleep(1000);
+    create_stop();
+    msleep(3000);
+    /*
+    while(analog(SEE_COW) > 1000)
+    {
+    	create_backward(1, 100);
+    }*/
+    //create_backward(40, 300);
+    /*create_drive_direct(100, 0);
+    msleep(500);
+    while(analog(SEE_COW) > 1000)
+    {
+    	create_drive_direct(-100, 0);
+    }
+    */
+    //create_left(4, 25);
 
     // position arm for 2nd cow
     set_servo_position(WRIST, WRIST_UP);
-    msleep(200);
-    arm_down_for_dist(1000);
+    arm_down_for_dist(3000);
     set_servo_position(WRIST, WRIST_DOWN);
-    arm_down_for_dist(4400);
-    set_servo_position(CLAW, CLAW_CLOSE);
+    arm_down_for_dist(2200);
     msleep(500);
+    set_servo_position(CLAW, CLAW_CLOSE);
+    msleep(200);
     arm_up_for_time(1000);
-    set_servo_position(WRIST, WRIST_DOWN);
+    set_servo_position(WRIST, WRIST_DOWN-200);
     arm_up();
 
     //head towards ramp
     create_forward(20, 300);
-    msleep(200);
     create_left(200,200);
-    create_backward(20, 300);
-    msleep(200);
+    msleep(100);
+    create_backward(25, 300);
     //create_forward(4,100);
     //msleep(500);
 
     cow_dump_second();
 
     //head towards water tank
-    create_forward(10, 300);
-    create_right(135, 300);
-    create_backward(38, 300);
-    //create_right(45, 300);
-    create_backward(15, 300);
+    create_forward(20, 300);
+    create_left(104, 300);
+    msleep(100);
+    create_forward(39, 300); //36
+    //straighten_ridge();
+    //create_backward(20, 300);
+    create_left(86, 300);
+    create_backward(45, 300);
     
     // Shake Water tank
-    create_forward(35, 300);
+    create_forward(26, 300);
     set_servo_position(WRIST, WRIST_UP);
-    set_servo_position(CLAW, CLAW_OPEN-600);
-    arm_down_for_time(1000);
-    set_servo_position(WRIST, 200);
+    //set_servo_position(CLAW, CLAW_OPEN-600);
+    set_servo_position(CLAW, CLAW_MID);
+    arm_down_for_dist(5500);
+    set_servo_position(WRIST, WRIST_DOWN);
     arm_down();
-    create_backward(24, 300); //19
-    msleep(300);
-    arm_up_for_dist(3000);
+    set_servo_position(WRIST, 200);
+    create_backward(24, 300); //24
+    arm_up_for_dist(3500);
     create_forward(15, 200);
     arm_up_for_dist(2500);
-    create_backward(14, 200);
-    arm_up_for_dist(1000);
+    create_backward(10, 200);
+    arm_up_for_dist(750);
+    set_servo_position(CLAW, CLAW_CLOSE + 300);
+    msleep(100);
+    //create_forward(10, 100);
+    create_left(90, 100);
     
     disable_servos();
     return 0;
